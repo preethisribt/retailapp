@@ -2,10 +2,12 @@ services:
   mysql:
     image: mysql:9.7.0
     container_name: retail-mysql
+    env_file:
+      - .env
     environment:
       MYSQL_DATABASE: retail
-      MYSQL_USER: retail-admin
-      MYSQL_PASSWORD: retail
-      MYSQL_ROOT_PASSWORD: dummy
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     ports:
       - "3308:3306"
