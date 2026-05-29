@@ -1,44 +1,67 @@
 package com.preethisri.retailapp.Service;
 
+import com.preethisri.retailapp.Mapper.ProductMapper;
+import com.preethisri.retailapp.DTO.Request.ProductDTORequest;
+import com.preethisri.retailapp.DTO.Response.ProductDTOResponse;
 import com.preethisri.retailapp.Entity.Product;
 import com.preethisri.retailapp.Exception.ResourceNotFoundException;
 import com.preethisri.retailapp.Repository.ProductRepository;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 
+@RequiredArgsConstructor
 @Service
 public class ProductService {
+    private final ProductRepository productRepository;
+    private final ProductMapper productMapper;
 
-    @Autowired
-    ProductRepository productRepository;
-
-    public ResponseEntity<List<Product>> getAllProduct() {
-        return ResponseEntity.ok(productRepository.findAll());
+    public List<ProductDTOResponse> getAllProduct() {
+        List<Product> products = productRepository.findAll();
+        return products.stream().map(productMapper::toDTO).toList();
     }
 
-    public Product getProductByID(Long id) {
-        return productRepository.findById(id)
+    public ProductDTOResponse getProductByID(Long id) {
+        Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found for the id " + id));
+
+        return productMapper.toDTO(product);
     }
 
-
-    public List<Product> getProductByName(List<String> names) {
+    public List<ProductDTOResponse> getProductByName(List<String> names) {
         List<Product> result = new ArrayList<>();
 
         for (String name : names) {
             result.addAll(productRepository.searchProducts(name));
         }
-        return result;
+        return result.stream().map(productMapper::toDTO).toList();
     }
 
-    public List<Product> getByCategory(String name) {
-        return productRepository.findByCategoryContainingIgnoreCase(name);
+    public List<ProductDTOResponse> getByCategory(String name) {
+        List<Product> products = productRepository.findByCategoryContainingIgnoreCase(name);
+        return products.stream().map(productMapper::toDTO).toList();
+    }
+
+    public ProductDTOResponse addNewProduct(ProductDTORequest data) {
+        Product entity = productMapper.toEntity(data);
+        entity.setSku(generateSKU(entity));
+        Product product = productRepository.save(entity);
+        return productMapper.toDTO(product);
+    }
+
+    public String generateSKU(Product product) {
+        String productName = product.getProductName().substring(0, Math.min(3, product.getProductName().length())).toUpperCase();
+        String category = product.getCategory().substring(0, Math.min(3, product.getCategory().length())).toUpperCase();
+        String suffix = UUID.randomUUID().toString()
+                .substring(0, 4)
+                .toUpperCase();
+
+        return productName +  "-" + category + "-" + suffix;
     }
 }
