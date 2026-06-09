@@ -1,15 +1,13 @@
 package com.preethisri.retailapp.Service;
 
+import com.preethisri.retailapp.Exception.ProductAlreadyExistsException;
 import com.preethisri.retailapp.Mapper.ProductMapper;
 import com.preethisri.retailapp.DTO.Request.ProductDTORequest;
 import com.preethisri.retailapp.DTO.Response.ProductDTOResponse;
 import com.preethisri.retailapp.Entity.Product;
 import com.preethisri.retailapp.Exception.ResourceNotFoundException;
 import com.preethisri.retailapp.Repository.ProductRepository;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -38,7 +36,7 @@ public class ProductService {
         List<Product> result = new ArrayList<>();
 
         for (String name : names) {
-            result.addAll(productRepository.searchProducts(name));
+            result.addAll(productRepository.findByProductNameContainingIgnoreCase(name));
         }
         return result.stream().map(productMapper::toDTO).toList();
     }
@@ -50,9 +48,22 @@ public class ProductService {
 
     public ProductDTOResponse addNewProduct(ProductDTORequest data) {
         Product entity = productMapper.toEntity(data);
-        entity.setSku(generateSKU(entity));
-        Product product = productRepository.save(entity);
-        return productMapper.toDTO(product);
+
+        if (checkDuplicateProduct(entity))
+            throw new ProductAlreadyExistsException("Product already exists");
+        else {
+            entity.setSku(generateSKU(entity));
+            Product product = productRepository.save(entity);
+            return productMapper.toDTO(product);
+        }
+    }
+
+    public boolean checkDuplicateProduct(Product product) {
+        return productRepository.existsByProductNameAndCategoryAndColourAndStorageAndPrice(product.getProductName(),
+                product.getCategory(),
+                product.getColour(),
+                product.getStorage(),
+                product.getPrice());
     }
 
     public String generateSKU(Product product) {
@@ -62,6 +73,6 @@ public class ProductService {
                 .substring(0, 4)
                 .toUpperCase();
 
-        return productName +  "-" + category + "-" + suffix;
+        return productName + "-" + category + "-" + suffix;
     }
 }
