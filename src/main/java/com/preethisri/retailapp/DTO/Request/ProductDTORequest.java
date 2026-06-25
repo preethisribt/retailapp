@@ -36,5 +36,4 @@ public class ProductDTORequest {
     @NotNull(message = "colour is required")
     @Size(max = 10)
     private String colour;
-    private String sku;
 }
