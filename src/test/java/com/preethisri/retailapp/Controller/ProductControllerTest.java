@@ -1,9 +1,13 @@
 package com.preethisri.retailapp.Controller;
 
+import com.preethisri.retailapp.DTO.Request.ProductDTOPatchRequest;
 import com.preethisri.retailapp.DTO.Request.ProductDTORequest;
 import com.preethisri.retailapp.DTO.Response.ProductDTOResponse;
+import com.preethisri.retailapp.Exception.ResourceNotFoundException;
 import com.preethisri.retailapp.Service.ProductService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -18,10 +22,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import tools.jackson.databind.ObjectMapper;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 
 @WebMvcTest(ProductController.class)
 class ProductControllerTest {
@@ -34,11 +38,33 @@ class ProductControllerTest {
     @Autowired
     ObjectMapper objectMapper;
 
-    @Test
-    void shouldReturnProductForID() throws Exception {
-        ProductDTOResponse productDTOResponse = new ProductDTOResponse();
+    ProductDTORequest productDTORequest;
+    ProductDTOResponse productDTOResponse;
+
+    @BeforeEach
+    void setUp() {
+        productDTORequest = new ProductDTORequest();
+
+        productDTORequest.setProductName("Lenovo Yoga");
+        productDTORequest.setCategory("Laptop");
+        productDTORequest.setColour("Silver");
+        productDTORequest.setStorage("512GB");
+        productDTORequest.setPrice(BigDecimal.valueOf(1234.43));
+        productDTORequest.setStock(3);
+
+        productDTOResponse = new ProductDTOResponse();
+        productDTOResponse.setProductName("Lenovo Yoga");
+        productDTOResponse.setCategory("Laptop");
+        productDTOResponse.setColour("Silver");
+        productDTOResponse.setStorage("512GB");
+        productDTOResponse.setPrice(BigDecimal.valueOf(1234.43));
+        productDTOResponse.setStock(3);
         productDTOResponse.setId(1L);
 
+    }
+
+    @Test
+    void shouldReturnProductForID() throws Exception {
         Mockito.when(productService.getProductByID(1L))
                 .thenReturn(productDTOResponse);
 
@@ -49,12 +75,7 @@ class ProductControllerTest {
 
     @Test
     void shouldReturnListOfProductForCategory() throws Exception {
-        String category = "phone";
-
-        ProductDTOResponse productDTOResponse = new ProductDTOResponse();
-        productDTOResponse.setCategory(category);
-        productDTOResponse.setId(5L);
-        productDTOResponse.setProductName("Lenovo Yoga");
+        String category = "Laptop";
 
         Mockito.when(productService.getByCategory(category)).thenReturn(List.of(productDTOResponse));
 
@@ -107,21 +128,6 @@ class ProductControllerTest {
 
     @Test
     void shouldAbleToAddProduct() throws Exception {
-        ProductDTORequest productDTORequest = new ProductDTORequest();
-        productDTORequest.setProductName("Lenovo Yoga");
-        productDTORequest.setCategory("Laptop");
-        productDTORequest.setColour("Silver");
-        productDTORequest.setStorage("512GB");
-        productDTORequest.setPrice(BigDecimal.valueOf(1234.43));
-        productDTORequest.setStock(3);
-
-        ProductDTOResponse productDTOResponse = new ProductDTOResponse();
-        productDTOResponse.setProductName("Lenovo Yoga");
-        productDTOResponse.setCategory("Laptop");
-        productDTOResponse.setColour("Silver");
-        productDTOResponse.setStorage("512GB");
-        productDTOResponse.setPrice(BigDecimal.valueOf(1234.43));
-        productDTOResponse.setStock(3);
         productDTOResponse.setSku("LEN-LAP-AB12");
 
         Mockito.when(productService.addNewProduct(any(ProductDTORequest.class))).thenReturn(productDTOResponse);
@@ -159,5 +165,65 @@ class ProductControllerTest {
 
         Mockito.verify(productService, Mockito.never()).addNewProduct(any(ProductDTORequest.class));
     }
+
+    @Test
+    void shouldAbleToUpdateProduct() throws Exception {
+        Mockito.when(productService.updateProduct(Mockito.eq(1L), any(ProductDTORequest.class))).thenReturn(productDTOResponse);
+
+        mockMvc.perform(put("/api/products/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(productDTORequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("1"))
+                .andExpect(jsonPath("$.productName").value("Lenovo Yoga"))
+                .andExpect(jsonPath("$.category").value("Laptop"))
+                .andExpect(jsonPath("$.colour").value("Silver"))
+                .andExpect(jsonPath("$.storage").value("512GB"))
+                .andExpect(jsonPath("$.price").value(1234.43))
+                .andExpect(jsonPath("$.stock").value(3));
+    }
+
+    @Test
+    void shouldReturnBadRequestForInvalidID_UpdateProduct() throws Exception {
+        mockMvc.perform(put("/api/products/0")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString((productDTORequest))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturnBadRequestForInvalidContent_UpdateProduct() throws Exception {
+        mockMvc.perform(put("/api/products/10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new ProductDTORequest())))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturnResourceNotFoundForNotAvailableID() throws Exception {
+        Mockito.when(productService.updateProduct(Mockito.eq(121L), any(ProductDTORequest.class))).thenThrow(ResourceNotFoundException.class);
+
+        mockMvc.perform(put("/api/products/121")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(productDTORequest)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldAbleToPartiallyUpdateProduct() throws Exception {
+        ProductDTOPatchRequest productDTOPatchRequest = new ProductDTOPatchRequest();
+        productDTOPatchRequest.setProductName("Lenovo Yoga");
+
+        Mockito.when(productService.partialUpdateProduct(Mockito.eq(1L), any(ProductDTOPatchRequest.class))).thenReturn(productDTOResponse);
+
+        mockMvc.perform(patch("/api/products/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(productDTOPatchRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productName").value("Lenovo Yoga"));
+
+        Mockito.verify(productService).partialUpdateProduct(Mockito.eq(1L), any(ProductDTOPatchRequest.class));
+    }
 }
+
 
