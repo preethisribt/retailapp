@@ -1,11 +1,13 @@
 package com.preethisri.retailapp.Controller;
 
+import com.preethisri.retailapp.DTO.Request.ProductDTOPatchRequest;
 import com.preethisri.retailapp.DTO.Request.ProductDTORequest;
 import com.preethisri.retailapp.DTO.Response.ProductDTOResponse;
 import com.preethisri.retailapp.Entity.Product;
 import com.preethisri.retailapp.Service.ProductService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -49,5 +51,15 @@ public class ProductController {
     @PostMapping
     public ResponseEntity<ProductDTOResponse> addNewProduct(@Valid @RequestBody ProductDTORequest data) {
         return ResponseEntity.status(HttpStatus.CREATED).body(productService.addNewProduct(data));
+    }
+
+    @PutMapping(value = "/{id}")
+    public ResponseEntity<ProductDTOResponse> updateProduct(@PathVariable @Min(1) long id, @Valid @RequestBody ProductDTORequest data) {
+        return ResponseEntity.status(HttpStatus.OK).body(productService.updateProduct(id, data));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<ProductDTOResponse> partialUpdateProduct(@PathVariable @Min(1) long id, @RequestBody @Valid ProductDTOPatchRequest data) {
+        return ResponseEntity.status(HttpStatus.OK).body(productService.partialUpdateProduct(id, data));
     }
 }
