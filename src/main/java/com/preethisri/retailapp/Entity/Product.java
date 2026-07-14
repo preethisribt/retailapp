@@ -11,16 +11,25 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name="products")
+@Table(name = "products", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_product_details",
+                columnNames = {
+                        "productName",
+                        "category",
+                        "colour",
+                        "storage",
+                        "price"
+                })
+})
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(nullable = false,length = 100)
+    @Column(nullable = false, length = 100)
     private String productName;
 
-    @Column(precision = 10,scale = 2,nullable = false)
+    @Column(precision = 10, scale = 2, nullable = false)
     private BigDecimal price;
 
     private String description;
@@ -28,13 +37,13 @@ public class Product {
     @Column(nullable = false)
     private Integer stock;
 
-    @Column(length = 20,nullable = false)
+    @Column(length = 20, nullable = false)
     private String category;
 
-    @Column( length=20)
+    @Column(length = 20)
     private String storage;
 
-    @Column(nullable = false, length=30)
+    @Column(nullable = false, length = 30)
     private String colour;
 
     @Column(nullable = false, unique = true)
