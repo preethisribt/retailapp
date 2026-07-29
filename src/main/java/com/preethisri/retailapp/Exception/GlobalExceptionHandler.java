@@ -13,7 +13,7 @@ import tools.jackson.databind.exc.InvalidFormatException;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFoundException(ResourceNotFoundException exp) {
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException exp) {
         ErrorResponse error = new ErrorResponse(404, exp.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
@@ -39,6 +39,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException exp) {
+        String message = exp.getMessage();
+
+        ErrorResponse error = new ErrorResponse(400, message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException exp) {
         String message = exp.getMessage();
 
         ErrorResponse error = new ErrorResponse(400, message);

@@ -1,8 +1,8 @@
 package com.preethisri.retailapp.Controller;
 
-import com.preethisri.retailapp.DTO.Request.ProductDTOPatchRequest;
-import com.preethisri.retailapp.DTO.Request.ProductDTORequest;
-import com.preethisri.retailapp.DTO.Response.ProductDTOResponse;
+import com.preethisri.retailapp.DTO.Request.Product.ProductDTOPatchRequest;
+import com.preethisri.retailapp.DTO.Request.Product.ProductDTORequest;
+import com.preethisri.retailapp.DTO.Response.Product.ProductDTOResponse;
 import com.preethisri.retailapp.Exception.ProductAlreadyExistsException;
 import com.preethisri.retailapp.Exception.ResourceNotFoundException;
 import com.preethisri.retailapp.Service.ProductService;
