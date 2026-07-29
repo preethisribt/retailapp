@@ -1,4 +1,4 @@
-package com.preethisri.retailapp.DTO.Request;
+package com.preethisri.retailapp.DTO.Request.Product;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
@@ -55,6 +55,7 @@ public class ProductDTOPatchRequest {
     @Schema(
             description = "Updated product colour",
             example = "Black"
+
     )
     @Size(max = 10)
     private String colour;
