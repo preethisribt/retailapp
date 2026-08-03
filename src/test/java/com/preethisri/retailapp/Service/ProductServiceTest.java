@@ -4,7 +4,7 @@ import com.preethisri.retailapp.DTO.Request.Product.ProductDTOPatchRequest;
 import com.preethisri.retailapp.DTO.Request.Product.ProductDTORequest;
 import com.preethisri.retailapp.DTO.Response.Product.ProductDTOResponse;
 import com.preethisri.retailapp.Entity.Product;
-import com.preethisri.retailapp.Exception.ProductAlreadyExistsException;
+import com.preethisri.retailapp.Exception.ResourceAlreadyExistsException;
 import com.preethisri.retailapp.Exception.ResourceNotFoundException;
 import com.preethisri.retailapp.Mapper.ProductMapper;
 import com.preethisri.retailapp.Repository.ProductRepository;
@@ -193,7 +193,7 @@ public class ProductServiceTest {
                 "512GB",
                 BigDecimal.valueOf(1234.43))).thenReturn(true);
 
-        ProductAlreadyExistsException exception = Assertions.assertThrows(ProductAlreadyExistsException.class, () -> productService.addNewProduct(productDTORequest));
+        ResourceAlreadyExistsException exception = Assertions.assertThrows(ResourceAlreadyExistsException.class, () -> productService.addNewProduct(productDTORequest));
         Assertions.assertEquals("Product already exists", exception.getMessage());
 
         Mockito.verify(productRepository).existsByProductNameAndCategoryAndColourAndStorageAndPrice("Lenovo Yoga",
@@ -210,7 +210,7 @@ public class ProductServiceTest {
         Mockito.when(productRepository.existsByProductNameAndCategoryAndColourAndStorageAndPrice(any(), any(), any(), any(), any())).thenReturn(false);
 
         Mockito.when(productRepository.save(product)).thenThrow(DataIntegrityViolationException.class);
-        Assertions.assertThrows(ProductAlreadyExistsException.class, () -> productService.addNewProduct(productDTORequest));
+        Assertions.assertThrows(ResourceAlreadyExistsException.class, () -> productService.addNewProduct(productDTORequest));
 
         Mockito.verify(productMapper).toEntity(productDTORequest);
         Mockito.verify(productRepository).existsByProductNameAndCategoryAndColourAndStorageAndPrice(any(), any(), any(), any(), any());

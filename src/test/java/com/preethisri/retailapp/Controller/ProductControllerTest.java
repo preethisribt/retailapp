@@ -3,7 +3,7 @@ package com.preethisri.retailapp.Controller;
 import com.preethisri.retailapp.DTO.Request.Product.ProductDTOPatchRequest;
 import com.preethisri.retailapp.DTO.Request.Product.ProductDTORequest;
 import com.preethisri.retailapp.DTO.Response.Product.ProductDTOResponse;
-import com.preethisri.retailapp.Exception.ProductAlreadyExistsException;
+import com.preethisri.retailapp.Exception.ResourceAlreadyExistsException;
 import com.preethisri.retailapp.Exception.ResourceNotFoundException;
 import com.preethisri.retailapp.Service.ProductService;
 import org.junit.jupiter.api.BeforeEach;
@@ -187,7 +187,7 @@ class ProductControllerTest {
     @Test
     void shouldReturnConflictWhenProductAlreadyExists() throws Exception {
         Mockito.when(productService.addNewProduct(any(ProductDTORequest.class)))
-                .thenThrow(new ProductAlreadyExistsException("Product already exists"));
+                .thenThrow(new ResourceAlreadyExistsException("Product already exists"));
 
         mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
