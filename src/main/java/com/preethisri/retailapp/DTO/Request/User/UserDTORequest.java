@@ -21,11 +21,13 @@ public class UserDTORequest {
     private String lastName;
 
     @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email format")
+    @Pattern(
+            regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
+            message = "Invalid format")
     private String email;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 8, max = 13, message = "Password must contain 8 to 13 letters")
+    @Size(min = 8, max = 13, message = "Password must contain 8 to 13 characters")
     private String password;
 
     @NotBlank(message = "Phone number is required")

@@ -1,12 +1,12 @@
 package com.preethisri.retailapp.Service;
 
 import com.preethisri.retailapp.DTO.Request.Product.ProductDTOPatchRequest;
-import com.preethisri.retailapp.Exception.ProductAlreadyExistsException;
-import com.preethisri.retailapp.Mapper.ProductMapper;
 import com.preethisri.retailapp.DTO.Request.Product.ProductDTORequest;
 import com.preethisri.retailapp.DTO.Response.Product.ProductDTOResponse;
 import com.preethisri.retailapp.Entity.Product;
+import com.preethisri.retailapp.Exception.ResourceAlreadyExistsException;
 import com.preethisri.retailapp.Exception.ResourceNotFoundException;
+import com.preethisri.retailapp.Mapper.ProductMapper;
 import com.preethisri.retailapp.Repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +15,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -66,7 +69,7 @@ public class ProductService {
 
         if (checkDuplicateProduct(entity)) {
             log.warn("Duplicate product found {}", entity.getProductName());
-            throw new ProductAlreadyExistsException("Product already exists");
+            throw new ResourceAlreadyExistsException("Product already exists");
         }
 
         log.info("Creating Product {}", entity.getProductName());
@@ -79,7 +82,7 @@ public class ProductService {
             return productMapper.toDTO(product);
         } catch (DataIntegrityViolationException exception) {
             log.error("Failed to create product {} due to database constraint violation", entity.getProductName());
-            throw new ProductAlreadyExistsException("Product already exists");
+            throw new ResourceAlreadyExistsException("Product already exists");
         }
     }
 
