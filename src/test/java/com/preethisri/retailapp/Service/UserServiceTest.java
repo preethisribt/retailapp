@@ -1,9 +1,11 @@
 package com.preethisri.retailapp.Service;
 
+import com.preethisri.retailapp.DTO.Request.User.UserDTORequest;
 import com.preethisri.retailapp.DTO.Response.User.UserDTOResponse;
 import com.preethisri.retailapp.Entity.User;
 import com.preethisri.retailapp.Enums.UserRole;
 import com.preethisri.retailapp.Exception.BadRequestException;
+import com.preethisri.retailapp.Exception.ResourceAlreadyExistsException;
 import com.preethisri.retailapp.Exception.ResourceNotFoundException;
 import com.preethisri.retailapp.Mapper.UserMapper;
 import com.preethisri.retailapp.Repository.UserRepository;
@@ -16,16 +18,12 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.matches;
-import static org.mockito.Mockito.times;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
@@ -35,11 +33,12 @@ public class UserServiceTest {
     private UserRepository userRepository;
     @Mock
     private UserMapper userMapper;
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
-    //@Mock
     private User user;
-    // @Mock
     private UserDTOResponse userDTOResponse;
+    private UserDTORequest userDTORequest;
 
     @BeforeEach
     public void setup() {
@@ -58,6 +57,13 @@ public class UserServiceTest {
         userDTOResponse.setLastName("Brown");
         userDTOResponse.setPhoneNumber("0434567890");
         userDTOResponse.setRole(UserRole.CUSTOMER);
+
+        userDTORequest = new UserDTORequest();
+        userDTORequest.setEmail("michael.brown@gmail.com");
+        userDTORequest.setFirstName("Michael");
+        userDTORequest.setLastName("Brown");
+        userDTORequest.setPhoneNumber("0434567890");
+        userDTORequest.setPassword("michael6844");
     }
 
     @Test
@@ -195,5 +201,53 @@ public class UserServiceTest {
         Mockito.verify(userRepository).findAll(any(Specification.class));
         Mockito.verify(userMapper).toDTO(user1);
         Mockito.verify(userMapper).toDTO(user2);
+    }
+
+    @Test
+    void shouldCreateUserSuccessfully() throws Exception {
+        Mockito.when(userRepository.findByPhoneNumber(userDTORequest.getPhoneNumber())).thenReturn(Optional.empty());
+        Mockito.when(userRepository.findByEmail(userDTORequest.getEmail())).thenReturn(Optional.empty());
+        Mockito.when(passwordEncoder.encode(userDTORequest.getPassword())).thenReturn("encodedPassword");
+
+        Mockito.when(userMapper.toEntity(userDTORequest)).thenReturn(user);
+        Mockito.when(userRepository.save(user)).thenReturn(user);
+        Mockito.when(userMapper.toDTO(user)).thenReturn(userDTOResponse);
+
+        UserDTOResponse response = userService.createUser(userDTORequest);
+        Assertions.assertEquals("encodedPassword", user.getPassword());
+        Assertions.assertEquals(1L, response.getId());
+        Assertions.assertEquals("Michael", response.getFirstName());
+        Assertions.assertEquals(UserRole.CUSTOMER, user.getRole());
+
+        Mockito.verify(userRepository).findByEmail(userDTORequest.getEmail());
+        Mockito.verify(userRepository).findByPhoneNumber(userDTORequest.getPhoneNumber());
+        Mockito.verify(passwordEncoder).encode(userDTORequest.getPassword());
+        Mockito.verify(userRepository).save(user);
+        Mockito.verify(userMapper).toEntity(userDTORequest);
+        Mockito.verify(userMapper).toDTO(user);
+    }
+
+    @Test
+    void shouldReturnConflict_WhenEmailAlreadyExists() throws Exception {
+        Mockito.when(userRepository.findByEmail(userDTORequest.getEmail())).thenReturn(Optional.of(user));
+
+        Assertions.assertThrows(ResourceAlreadyExistsException.class, () -> userService.createUser(userDTORequest));
+        Mockito.verify(userRepository).findByEmail(userDTORequest.getEmail());
+        Mockito.verifyNoInteractions(userMapper);
+        Mockito.verifyNoMoreInteractions(userRepository);
+        Mockito.verifyNoInteractions(passwordEncoder);
+    }
+
+    @Test
+    void shouldReturnConflict_WhenPhoneAlreadyExists() throws Exception {
+        Mockito.when(userRepository.findByEmail(userDTORequest.getEmail())).thenReturn(Optional.empty());
+        Mockito.when(userRepository.findByPhoneNumber(userDTORequest.getPhoneNumber())).thenReturn(Optional.of(user));
+
+        Assertions.assertThrows(ResourceAlreadyExistsException.class, () -> userService.createUser(userDTORequest));
+        Mockito.verify(userRepository).findByEmail(userDTORequest.getEmail());
+        Mockito.verify(userRepository).findByPhoneNumber(userDTORequest.getPhoneNumber());
+        Mockito.verifyNoInteractions(userMapper);
+        Mockito.verifyNoMoreInteractions(userRepository);
+        Mockito.verifyNoInteractions(passwordEncoder);
     }
 }

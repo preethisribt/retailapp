@@ -1,11 +1,12 @@
 package com.preethisri.retailapp.Controller;
 
+import com.preethisri.retailapp.DTO.Request.User.UserDTORequest;
 import com.preethisri.retailapp.DTO.Response.User.UserDTOResponse;
 import com.preethisri.retailapp.Enums.UserRole;
 import com.preethisri.retailapp.Service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.constraints.Email;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
@@ -60,4 +61,14 @@ public class UserController {
                                                                   @RequestParam(required = false) @Pattern(regexp = "^\\+?[0-9]{10,13}$", message = "Invalid") String phoneNumber) {
         return ResponseEntity.ok(userService.searchUsers(email, firstName, role, phoneNumber));
     }
+
+    @Operation(
+            summary = "Create a user",
+            description = "Creates a new user."
+    )
+    @PostMapping
+    public ResponseEntity<UserDTOResponse> createUser(@Valid @RequestBody UserDTORequest body) {
+        return ResponseEntity.ok(userService.createUser(body));
+    }
+
 }
