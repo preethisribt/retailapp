@@ -71,4 +71,9 @@ public class UserController {
         return ResponseEntity.ok(userService.createUser(body));
     }
 
+    @Operation(summary = "Update existing User", description = "Update user fields")
+    @PutMapping("/{id}")
+    public ResponseEntity<UserDTOResponse> updateUser(@PathVariable @Min(1) Long id, @Valid @RequestBody UserDTORequest requestBody) {
+        return ResponseEntity.ok(userService.updateUser(id, requestBody));
+    }
 }

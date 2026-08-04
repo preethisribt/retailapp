@@ -22,8 +22,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UserController.class)
@@ -220,7 +219,7 @@ public class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userDTORequest)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("firstName : First name is required"));
+                .andExpect(jsonPath("$.message").value("First name is required"));
 
         Mockito.verifyNoInteractions(userService);
     }
@@ -233,7 +232,7 @@ public class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userDTORequest)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("phoneNumber : Phone number must contain 10 to 13 digits and may start with +"));
+                .andExpect(jsonPath("$.message").value("Phone number must contain 10 to 13 digits and may start with +"));
 
         Mockito.verifyNoInteractions(userService);
     }
@@ -246,7 +245,7 @@ public class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userDTORequest)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("password : Password must contain 8 to 13 characters"));
+                .andExpect(jsonPath("$.message").value("Password must contain 8 to 13 characters"));
 
         Mockito.verifyNoInteractions(userService);
     }
@@ -259,7 +258,7 @@ public class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userDTORequest)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("phoneNumber : Phone number must contain 10 to 13 digits and may start with +"));
+                .andExpect(jsonPath("$.message").value("Phone number must contain 10 to 13 digits and may start with +"));
 
         Mockito.verifyNoInteractions(userService);
     }
@@ -299,7 +298,7 @@ public class UserControllerTest {
                         .content(objectMapper.writeValueAsString(userDTORequest)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message")
-                        .value("email : Invalid format"));
+                        .value("Invalid format"));
 
         Mockito.verifyNoInteractions(userService);
     }
@@ -307,13 +306,13 @@ public class UserControllerTest {
     @Test
     void shouldReturnErrorInvalidJson_CreateUser() throws Exception {
         String invalidJson = """
-            {
-              "email": "Sam@gmail.com",
-              "firstName": "Sam",
-              "lastName": "Anderson",
-              "phoneNumber": "+610415678329",
-            }
-            """;
+                {
+                  "email": "Sam@gmail.com",
+                  "firstName": "Sam",
+                  "lastName": "Anderson",
+                  "phoneNumber": "+610415678329",
+                }
+                """;
 
 
         mockMvc.perform(post("/api/users")
@@ -324,5 +323,108 @@ public class UserControllerTest {
                         .value("Invalid request body"));
 
         Mockito.verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldAbleToUpdateUser() throws Exception {
+        Mockito.when(userService.updateUser(Mockito.anyLong(), Mockito.any(UserDTORequest.class))).thenReturn(userDTOResponse);
+
+        mockMvc.perform(put("/api/users/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userDTORequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.role").value("CUSTOMER"));
+
+        Mockito.verify(userService, times(1)).updateUser(Mockito.anyLong(), Mockito.any(UserDTORequest.class));
+    }
+
+    @Test
+    void shouldReturnBadRequest_UpdateUser() throws Exception {
+        UserDTORequest request = new UserDTORequest();
+        request.setEmail("james.anderson10@gmail.com");
+        request.setFirstName("James");
+        request.setLastName("Anderson");
+        request.setPhoneNumber("0412345678");
+
+        mockMvc.perform(put("/api/users/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Password is required"));
+
+
+        Mockito.verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldReturnBadRequest_InvalidId_UpdateUser() throws Exception {
+        mockMvc.perform(put("/api/users/-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userDTORequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("id must be greater than or equal to 1"));
+
+
+        Mockito.verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldReturnInvalidRequest_UnknownField_UpdateUser() throws Exception {
+
+        String requestBody = """
+                {
+                  "email": "james@gmail.com",
+                  "firstName": "James",
+                  "lastName": "Anderson",
+                  "phoneNumber": 0412345678,
+                  "password": "Password@123",
+                  "unknownField": "abc"
+                }
+                """;
+
+        mockMvc.perform(put("/api/users/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid request body"));
+
+        Mockito.verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldReturnBadRequest_PhoneNumberTypeIsInvalid_UpdateUser() throws Exception {
+
+        String requestBody = """
+            {
+              "email": "james@gmail.com",
+              "firstName": "James",
+              "lastName": "Anderson",
+              "phoneNumber": 0412345678,
+              "password": "Password@123"
+            }
+            """;
+
+        mockMvc.perform(put("/api/users/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid request body"));
+
+        Mockito.verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldReturnResourceNotFound_UpdateUser() throws Exception {
+        Long id = 111L;
+        Mockito.when(userService.updateUser(Mockito.anyLong(), Mockito.any(UserDTORequest.class))).thenThrow(new ResourceNotFoundException("User not found with id: " + id));
+
+        mockMvc.perform(put("/api/users/111")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userDTORequest)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("User not found with id: 111"));
+
+        Mockito.verify(userService, times(1)).updateUser(Mockito.any(Long.class), Mockito.any(UserDTORequest.class));
     }
 }

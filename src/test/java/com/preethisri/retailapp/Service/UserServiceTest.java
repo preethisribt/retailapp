@@ -250,4 +250,141 @@ public class UserServiceTest {
         Mockito.verifyNoMoreInteractions(userRepository);
         Mockito.verifyNoInteractions(passwordEncoder);
     }
+
+    @Test
+    void shouldAbleToUpdateUser() {
+        User userExisting = new User();
+        userExisting.setId(1L);
+        userExisting.setFirstName("Michael");
+        userExisting.setEmail("michael.brown123@gmail.com");
+        userExisting.setPhoneNumber("0434511190");
+        userExisting.setPassword("oldEncodedPassword");
+
+
+        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(userExisting));
+        Mockito.when(passwordEncoder.matches(userDTORequest.getPassword(), userExisting.getPassword())).thenReturn(false);
+        Mockito.when(passwordEncoder.encode(userDTORequest.getPassword())).thenReturn("encodedPassword");
+        Mockito.when(userRepository.findByEmail(userDTORequest.getEmail())).thenReturn(Optional.empty());
+        Mockito.when(userRepository.findByPhoneNumber(userDTORequest.getPhoneNumber())).thenReturn(Optional.empty());
+        Mockito.when(userRepository.save(userExisting)).thenReturn(user);
+        Mockito.when(userMapper.toDTO(user)).thenReturn(userDTOResponse);
+
+
+        UserDTOResponse response = userService.updateUser(1L, userDTORequest);
+        Assertions.assertEquals(1L, response.getId());
+
+        Assertions.assertEquals("Michael", response.getFirstName());
+        Assertions.assertEquals("michael.brown@gmail.com", response.getEmail());
+        Assertions.assertEquals("0434567890", response.getPhoneNumber());
+
+        Mockito.verify(userRepository).findById(1L);
+        Mockito.verify(userRepository).findByEmail(userDTORequest.getEmail());
+        Mockito.verify(userRepository).findByPhoneNumber(userDTORequest.getPhoneNumber());
+        Mockito.verify(passwordEncoder).encode(userDTORequest.getPassword());
+        Mockito.verify(passwordEncoder).matches(userDTORequest.getPassword(), "oldEncodedPassword");
+        Mockito.verify(userRepository).save(userExisting);
+        Mockito.verify(userMapper).toDTO(user);
+    }
+
+    @Test
+    void shouldReturnResourceAlreadyExist_DuplicateEmail_UpdateUser() {
+        User userExisting = new User();
+        userExisting.setId(1L);
+        userExisting.setFirstName("Michael");
+        userExisting.setEmail("michael.brown123@gmail.com");
+        userExisting.setPhoneNumber("0434511190");
+        userExisting.setPassword("oldEncodedPassword");
+
+        User user2 = new User();
+        user2.setEmail("michael.brown@gmail.com");
+
+        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(userExisting));
+        Mockito.when(passwordEncoder.matches(userDTORequest.getPassword(), userExisting.getPassword())).thenReturn(false);
+        Mockito.when(passwordEncoder.encode(userDTORequest.getPassword())).thenReturn("encodedPassword");
+        Mockito.when(userRepository.findByEmail(userDTORequest.getEmail())).thenReturn(Optional.of(user2));
+
+        Assertions.assertThrows(ResourceAlreadyExistsException.class, () -> userService.updateUser(1L, userDTORequest));
+
+        Mockito.verify(userRepository).findById(1L);
+        Mockito.verify(passwordEncoder).encode(userDTORequest.getPassword());
+        Mockito.verify(passwordEncoder).matches(userDTORequest.getPassword(), "oldEncodedPassword");
+        Mockito.verify(userRepository).findByEmail(userDTORequest.getEmail());
+        Mockito.verify(userRepository, Mockito.times(0)).save(userExisting);
+        Mockito.verify(userMapper, Mockito.never()).toDTO(Mockito.any(User.class));
+    }
+
+
+    @Test
+    void shouldReturnResourceAlreadyExist_DuplicatePhone_UpdateUser() {
+        User userExisting = new User();
+        userExisting.setId(1L);
+        userExisting.setFirstName("Michael");
+        userExisting.setEmail("michael.brown123@gmail.com");
+        userExisting.setPhoneNumber("0434511190");
+        userExisting.setPassword("oldEncodedPassword");
+
+        User user2 = new User();
+        user2.setPhoneNumber("0434567890");
+
+        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(userExisting));
+        Mockito.when(passwordEncoder.matches(userDTORequest.getPassword(), userExisting.getPassword())).thenReturn(false);
+        Mockito.when(passwordEncoder.encode(userDTORequest.getPassword())).thenReturn("encodedPassword");
+        Mockito.when(userRepository.findByEmail(userDTORequest.getEmail())).thenReturn(Optional.empty());
+        Mockito.when(userRepository.findByPhoneNumber(userDTORequest.getPhoneNumber())).thenReturn(Optional.of(user2));
+
+        Assertions.assertThrows(ResourceAlreadyExistsException.class, () -> userService.updateUser(1L, userDTORequest));
+
+        Mockito.verify(userRepository).findById(1L);
+        Mockito.verify(passwordEncoder).encode(userDTORequest.getPassword());
+        Mockito.verify(passwordEncoder).matches(userDTORequest.getPassword(), "oldEncodedPassword");
+        Mockito.verify(userRepository).findByEmail(userDTORequest.getEmail());
+        Mockito.verify(userRepository).findByPhoneNumber(userDTORequest.getPhoneNumber());
+        Mockito.verify(userRepository, Mockito.never()).save(userExisting);
+        Mockito.verifyNoInteractions(userMapper);
+    }
+
+    @Test
+    void shouldReturnResourceNotFoundException_InvalidId_UpdateUser() {
+        Long id = 111L;
+        Mockito.when(userRepository.findById(id)).thenReturn(Optional.empty());
+        Assertions.assertThrows(ResourceNotFoundException.class, () -> userService.updateUser(id, userDTORequest));
+
+        Mockito.verify(userRepository).findById(id);
+        Mockito.verifyNoInteractions(userMapper);
+        Mockito.verifyNoMoreInteractions(userRepository);
+        Mockito.verifyNoInteractions(passwordEncoder);
+    }
+
+    @Test
+    void shouldNotEncodePasswordWhenRequestIsSame_UpdateUser() {
+        User userExisting = new User();
+        userExisting.setId(1L);
+        userExisting.setEmail("michael.brown@gmail.com");
+        userExisting.setFirstName("Michael");
+        userExisting.setLastName("Brown");
+        userExisting.setPhoneNumber("0434567890");
+        userExisting.setRole(UserRole.CUSTOMER);
+        userExisting.setPassword("encodedPassword");
+
+        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(userExisting));
+        Mockito.when(passwordEncoder.matches(userDTORequest.getPassword(), userExisting.getPassword())).thenReturn(true);
+        Mockito.when(userRepository.save(userExisting)).thenReturn(user);
+        Mockito.when(userMapper.toDTO(user)).thenReturn(userDTOResponse);
+
+        UserDTOResponse response = userService.updateUser(1L, userDTORequest);
+        Assertions.assertEquals(1L, response.getId());
+        Assertions.assertEquals("Michael", response.getFirstName());
+        Assertions.assertEquals("michael.brown@gmail.com", response.getEmail());
+        Assertions.assertEquals("0434567890", response.getPhoneNumber());
+        Assertions.assertEquals("encodedPassword", userExisting.getPassword());
+
+        Mockito.verify(userRepository).findById(1L);
+        Mockito.verify(passwordEncoder).matches(userDTORequest.getPassword(), "encodedPassword");
+        Mockito.verify(userRepository).save(userExisting);
+        Mockito.verify(userMapper).toDTO(user);
+
+        Mockito.verify(userRepository,Mockito.never()).findByEmail(userDTORequest.getEmail());
+        Mockito.verify(userRepository,Mockito.never()).findByPhoneNumber(userDTORequest.getPhoneNumber());
+        Mockito.verify(passwordEncoder, Mockito.never()).encode(userDTORequest.getPassword());
+    }
 }
