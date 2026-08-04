@@ -36,12 +36,14 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserDTOResponse getUserById(Long id) {
-        User user = userRepository.findById(id).orElseThrow(() -> {
+        return userMapper.toDTO(findUserById(id));
+    }
+
+    public User findUserById(Long id) {
+        return userRepository.findById(id).orElseThrow(() -> {
             log.warn("User not found with id: {}", id);
             throw new ResourceNotFoundException("User not found with id: " + id);
         });
-
-        return userMapper.toDTO(user);
     }
 
     @Transactional(readOnly = true)
@@ -78,30 +80,68 @@ public class UserService {
     }
 
     @Transactional
-    public UserDTOResponse createUser(@Valid UserDTORequest request) {
+    public UserDTOResponse createUser(UserDTORequest request) {
         validateDuplicateEmail(request.getEmail());
         validateDuplicatePhone(request.getPhoneNumber());
 
         User user = userMapper.toEntity(request);
-        String encodedPassword = passwordEncoder.encode(request.getPassword());
-
-        user.setPassword(encodedPassword);
+        encodeAndSetPassword(user, request.getPassword());
         user.setRole(UserRole.CUSTOMER);
 
         return userMapper.toDTO(userRepository.save(user));
     }
 
-    public void validateDuplicatePhone(String phoneNumber) {
+    private void encodeAndSetPassword(User user, String password) {
+        String encodedPassword = passwordEncoder.encode(password);
+        user.setPassword(encodedPassword);
+    }
+
+    private void validateDuplicatePhone(String phoneNumber) {
         if (userRepository.findByPhoneNumber(phoneNumber).isPresent()) {
             log.warn("Phone number already exist {}", phoneNumber);
             throw new ResourceAlreadyExistsException("User already exists with the Phone number: " + phoneNumber);
         }
     }
 
-    public void validateDuplicateEmail(String email) {
+    private void validateDuplicateEmail(String email) {
         if (userRepository.findByEmail(email).isPresent()) {
             log.warn("Email already exist {}", email);
             throw new ResourceAlreadyExistsException("User already exists with the email: " + email);
         }
+    }
+
+    private void updatePhone(User existingUser, UserDTORequest request) {
+        if (!existingUser.getPhoneNumber().equals(request.getPhoneNumber())) {
+            validateDuplicatePhone(request.getPhoneNumber());
+            existingUser.setPhoneNumber(request.getPhoneNumber());
+        }
+    }
+
+    private void updatePassword(User existingUser, UserDTORequest request) {
+        boolean existingPassword = passwordEncoder.matches(request.getPassword(), existingUser.getPassword());
+
+        if (!existingPassword) {
+            encodeAndSetPassword(existingUser, request.getPassword());
+        }
+    }
+
+    private void updateEmail(User existingUser, UserDTORequest request) {
+        if (!existingUser.getEmail().equals(request.getEmail())) {
+            validateDuplicateEmail(request.getEmail());
+            existingUser.setEmail(request.getEmail());
+        }
+    }
+
+    @Transactional
+    public UserDTOResponse updateUser(Long id, UserDTORequest request) {
+        User existingUser = findUserById(id);
+
+        existingUser.setFirstName(request.getFirstName());
+        existingUser.setLastName(request.getLastName());
+        updatePassword(existingUser, request);
+        updateEmail(existingUser, request);
+        updatePhone(existingUser, request);
+
+        return userMapper.toDTO(userRepository.save(existingUser));
     }
 }

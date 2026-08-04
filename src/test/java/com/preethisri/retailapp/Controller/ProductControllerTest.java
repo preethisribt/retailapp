@@ -106,12 +106,10 @@ class ProductControllerTest {
 
         ProductDTOResponse productDTOResponse1 = new ProductDTOResponse();
         ProductDTOResponse productDTOResponse2 = new ProductDTOResponse();
-
         productDTOResponse1.setProductName("iPhone 17 Pro Max");
         productDTOResponse2.setProductName("Lenovo Yoga");
 
-       List.of(productDTOResponse1, productDTOResponse2);
-
+        Mockito.when(productService.getProducts(List.of(name1, name2))).thenReturn(List.of(productDTOResponse1, productDTOResponse2));
         mockMvc.perform(get("/api/products").param("names", name1, name2))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
@@ -179,7 +177,7 @@ class ProductControllerTest {
                         .content(request))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value("400"))
-                .andExpect(jsonPath("$.message").value("productName : Product name is required"));
+                .andExpect(jsonPath("$.message").value("Product name is required"));
 
         Mockito.verify(productService, Mockito.never()).addNewProduct(any(ProductDTORequest.class));
     }
