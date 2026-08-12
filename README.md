@@ -23,6 +23,18 @@ Implemented REST APIs for managing products:
 * ✅ Partially update product (PATCH)
 * ✅ Delete product
 
+### User Management API
+
+Implemented REST APIs for managing users:
+
+* ✅ Create a new user
+* ✅ Get all users
+* ✅ Get user by ID
+* ✅ Search users using dynamic filters
+* ✅ Update user completely (PUT)
+* ✅ Partially update user (PATCH)
+* ✅ Delete user
+
 ### Backend Features
 
 * ✅ Spring Data JPA integration
@@ -31,6 +43,8 @@ Implemented REST APIs for managing products:
 * ✅ Input validation using Jakarta Validation
 * ✅ Global exception handling
 * ✅ MapStruct for entity-DTO mapping
+* ✅ JPA Specifications for dynamic user search
+* ✅ Password encryption using PasswordEncoder
 * ✅ Unit testing with JUnit and Mockito
 * ✅ Swagger/OpenAPI API documentation
 
@@ -40,13 +54,13 @@ Implemented REST APIs for managing products:
 
 Swagger UI is available when running the application locally:
 
-```
+```text
 http://localhost:8080/swagger-ui/index.html
 ```
 
 OpenAPI specification:
 
-```
+```text
 http://localhost:8080/v3/api-docs
 ```
 
@@ -54,7 +68,7 @@ http://localhost:8080/v3/api-docs
 
 ## ⚙️ Tech Stack
 
-* Java
+* Java 17+
 * Spring Boot
 * Spring Data JPA
 * Hibernate
@@ -62,6 +76,7 @@ http://localhost:8080/v3/api-docs
 * Maven
 * Lombok
 * MapStruct
+* Jakarta Validation
 * Swagger / OpenAPI
 * JUnit 5
 * Mockito
@@ -70,7 +85,9 @@ http://localhost:8080/v3/api-docs
 
 ## 🏗️ Project Architecture
 
-```
+The application follows a layered architecture:
+
+```text
 Controller
     |
     ↓
@@ -85,10 +102,18 @@ Database
 
 Additional layers:
 
-```
-DTO  → Request/Response objects
-Mapper → Entity ↔ DTO conversion
-Exception → Centralized error handling
+```text
+DTO
+ ↓
+Request / Response objects
+
+Mapper
+ ↓
+Entity ↔ DTO conversion
+
+Exception
+ ↓
+Centralized exception handling
 ```
 
 ---
@@ -106,6 +131,53 @@ Exception → Centralized error handling
 | PUT    | `/api/products/{id}`                     | Update product           |
 | PATCH  | `/api/products/{id}`                     | Partially update product |
 | DELETE | `/api/products/{id}`                     | Delete product           |
+
+### Users
+
+| Method | Endpoint            | Description                        |
+| ------ | ------------------- | ---------------------------------- |
+| GET    | `/api/users`        | Get all users                      |
+| GET    | `/api/users/{id}`   | Get user by ID                     |
+| GET    | `/api/users/search` | Search users using dynamic filters |
+| POST   | `/api/users`        | Create user                        |
+| PUT    | `/api/users/{id}`   | Update user                        |
+| PATCH  | `/api/users/{id}`   | Partially update user              |
+| DELETE | `/api/users/{id}`   | Delete user                        |
+
+### User Search
+
+The User API supports dynamic filtering using **JPA Specifications**.
+
+Example:
+
+```text
+GET /api/users/search?firstName=emily&role=customer
+```
+
+Supported search criteria include:
+
+* First name
+* Email
+* Phone number
+* Role
+
+---
+
+## 🧪 Testing
+
+Unit tests are implemented using:
+
+* **JUnit 5**
+* **Mockito**
+
+The project includes unit tests for service-layer business logic, including:
+
+* Successful operations
+* Resource not found scenarios
+* Duplicate resource validation
+* Validation and update scenarios
+* Partial update scenarios
+* Delete operations
 
 ---
 
@@ -139,7 +211,7 @@ mvn spring-boot:run
 
 The application will start on:
 
-```
+```text
 http://localhost:8080
 ```
 
@@ -149,12 +221,12 @@ http://localhost:8080
 
 Planned features:
 
-* User management
 * Shopping cart functionality
 * Order management
 * Payment integration
 * Spring Security with JWT authentication
-* Pagination and advanced filtering
+* Pagination and sorting
+* Advanced filtering
 * Docker deployment
 * CI/CD pipeline
 * Cloud deployment
