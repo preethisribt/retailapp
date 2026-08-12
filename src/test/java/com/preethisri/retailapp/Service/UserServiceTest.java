@@ -565,4 +565,26 @@ public class UserServiceTest {
         Mockito.verifyNoInteractions(userMapper);
         Mockito.verifyNoInteractions(passwordEncoder);
     }
+
+    @Test
+    void shouldAbleToDeleteUser() {
+        Long id = 1L;
+        Mockito.when(userRepository.findById(id)).thenReturn(Optional.of(user));
+
+        userService.deleteUser(id);
+
+        Mockito.verify(userRepository).findById(id);
+        Mockito.verify(userRepository).deleteById(id);
+    }
+
+    @Test
+    void shouldReturnError_NotAvailableId_DeleteUser() {
+        Long id = 1L;
+        Mockito.when(userRepository.findById(id)).thenReturn(Optional.empty());
+
+        Assertions.assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(id));
+
+        Mockito.verify(userRepository).findById(id);
+        Mockito.verify(userRepository, Mockito.times(0)).deleteById(id);
+    }
 }

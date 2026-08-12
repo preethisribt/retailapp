@@ -11,6 +11,7 @@ import com.preethisri.retailapp.Exception.ResourceNotFoundException;
 import com.preethisri.retailapp.Mapper.UserMapper;
 import com.preethisri.retailapp.Repository.UserRepository;
 import com.preethisri.retailapp.Specifications.UserSpecification;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
@@ -196,5 +197,12 @@ public class UserService {
 
         log.info("Partial updated user {id}", existingUser.getId());
         return userMapper.toDTO(userRepository.save(existingUser));
+    }
+
+    @Transactional
+    public void deleteUser(Long id) {
+        findUserById(id);
+        userRepository.deleteById(id);
+        log.info("User {} deleted successfully", id);
     }
 }

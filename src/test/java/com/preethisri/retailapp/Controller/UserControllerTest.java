@@ -556,6 +556,7 @@ public class UserControllerTest {
 
         Mockito.verifyNoInteractions(userService);
     }
+
     @Test
     void shouldReturnBadRequest_emptyJson_PartiallyUpdate() throws Exception {
         Long id = 1L;
@@ -586,5 +587,35 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.message").value("Password must contain 8 to 13 characters"));
 
         Mockito.verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldBeAble_ValidId_ToDeleteUser() throws Exception {
+        Long id = 1L;
+
+        Mockito.doNothing().when(userService).deleteUser(id);
+        mockMvc.perform(delete("/api/users/{id}", id))
+                .andExpect(status().isNoContent());
+        verify(userService).deleteUser(id);
+    }
+
+    @Test
+    void shouldReturnError_InvalidId_DeleteUser() throws Exception {
+        Long id = -1L;
+
+        mockMvc.perform(delete("/api/users/{id}", id))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldReturnError_NotAvailableId_DeleteUser() throws Exception {
+        Long id = 10L;
+
+        Mockito.doThrow(new ResourceNotFoundException("User not found with id:" + id)).when(userService).deleteUser(id);
+        mockMvc.perform(delete("/api/users/{id}", id))
+                .andExpect(status().isNotFound());
+        verify(userService).deleteUser(id);
     }
 }
