@@ -83,4 +83,11 @@ public class UserController {
     public ResponseEntity<UserDTOResponse> partialUpdateUser(@PathVariable @Min(1) Long id, @Valid @RequestBody UserDTOPatchRequest requestBody) {
         return ResponseEntity.ok(userService.partialUpdateUser(id, requestBody));
     }
+
+    @Operation(summary = "Delete existing User", description = "Deletes an existing user")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable @Min(1) Long id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
 }
