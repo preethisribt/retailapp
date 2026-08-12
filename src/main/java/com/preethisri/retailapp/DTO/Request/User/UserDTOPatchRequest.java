@@ -1,7 +1,5 @@
 package com.preethisri.retailapp.DTO.Request.User;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -11,28 +9,22 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class UserDTORequest {
-    @NotBlank(message = "First name is required")
-    @Pattern(regexp = "^[a-zA-Z]+(?: [a-zA-Z]+(?:'[a-zA-Z]+)?)*$",message = "Invalid Firstname")
+public class UserDTOPatchRequest {
     @Size(max = 100)
+    @Pattern(regexp = "^[a-zA-Z]+(?: [a-zA-Z]+(?:'[a-zA-Z]+)?)*$",message = "Invalid Firstname")
     private String firstName;
 
-    @NotBlank(message = "Last name is required")
-    @Pattern(regexp = "^[a-zA-Z]+(?: [a-zA-Z]+(?:'[a-zA-Z]+)?)*$",message = "Invalid Lastname")
     @Size(max = 100)
+    @Pattern(regexp = "^[a-zA-Z]+(?: [a-zA-Z]+(?:'[a-zA-Z]+)?)*$",message = "Invalid Lastname")
     private String lastName;
 
-    @NotBlank(message = "Email is required")
-    @Pattern(
-            regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
+    @Pattern(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
             message = "Invalid email format")
     private String email;
 
-    @NotBlank(message = "Password is required")
     @Size(min = 8, max = 13, message = "Password must contain 8 to 13 characters")
     private String password;
 
-    @NotBlank(message = "Phone number is required")
     @Pattern(regexp = "^\\+?[0-9]{10,13}$", message = "Phone number must contain 10 to 13 digits and may start with +")
     private String phoneNumber;
 }
