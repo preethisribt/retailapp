@@ -1,5 +1,6 @@
 package com.preethisri.retailapp.Controller;
 
+import com.preethisri.retailapp.DTO.Request.User.UserDTOPatchRequest;
 import com.preethisri.retailapp.DTO.Request.User.UserDTORequest;
 import com.preethisri.retailapp.DTO.Response.User.UserDTOResponse;
 import com.preethisri.retailapp.Enums.UserRole;
@@ -75,5 +76,11 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserDTOResponse> updateUser(@PathVariable @Min(1) Long id, @Valid @RequestBody UserDTORequest requestBody) {
         return ResponseEntity.ok(userService.updateUser(id, requestBody));
+    }
+
+    @Operation(summary = "Partial update existing User", description = "Partial update user fields")
+    @PatchMapping("/{id}")
+    public ResponseEntity<UserDTOResponse> partialUpdateUser(@PathVariable @Min(1) Long id, @Valid @RequestBody UserDTOPatchRequest requestBody) {
+        return ResponseEntity.ok(userService.partialUpdateUser(id, requestBody));
     }
 }

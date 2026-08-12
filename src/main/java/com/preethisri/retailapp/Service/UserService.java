@@ -1,5 +1,6 @@
 package com.preethisri.retailapp.Service;
 
+import com.preethisri.retailapp.DTO.Request.User.UserDTOPatchRequest;
 import com.preethisri.retailapp.DTO.Request.User.UserDTORequest;
 import com.preethisri.retailapp.DTO.Response.User.UserDTOResponse;
 import com.preethisri.retailapp.Entity.User;
@@ -10,7 +11,6 @@ import com.preethisri.retailapp.Exception.ResourceNotFoundException;
 import com.preethisri.retailapp.Mapper.UserMapper;
 import com.preethisri.retailapp.Repository.UserRepository;
 import com.preethisri.retailapp.Specifications.UserSpecification;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
@@ -94,41 +94,74 @@ public class UserService {
     private void encodeAndSetPassword(User user, String password) {
         String encodedPassword = passwordEncoder.encode(password);
         user.setPassword(encodedPassword);
+
+        log.debug(encodedPassword + " updated for {id}", user.getId());
     }
 
     private void validateDuplicatePhone(String phoneNumber) {
-        if (userRepository.findByPhoneNumber(phoneNumber).isPresent()) {
-            log.warn("Phone number already exist {}", phoneNumber);
-            throw new ResourceAlreadyExistsException("User already exists with the Phone number: " + phoneNumber);
+        if (phoneNumber != null && !phoneNumber.isBlank()) {
+            if (userRepository.findByPhoneNumber(phoneNumber).isPresent()) {
+                log.warn("Phone number already exist {}", phoneNumber);
+                throw new ResourceAlreadyExistsException("User already exists with the Phone number: " + phoneNumber);
+            }
         }
     }
 
     private void validateDuplicateEmail(String email) {
-        if (userRepository.findByEmail(email).isPresent()) {
-            log.warn("Email already exist {}", email);
-            throw new ResourceAlreadyExistsException("User already exists with the email: " + email);
+        if (email != null && !email.isBlank()) {
+            if (userRepository.findByEmail(email).isPresent()) {
+                log.warn("Email already exist {}", email);
+                throw new ResourceAlreadyExistsException("User already exists with the email: " + email);
+            }
         }
     }
 
-    private void updatePhone(User existingUser, UserDTORequest request) {
-        if (!existingUser.getPhoneNumber().equals(request.getPhoneNumber())) {
-            validateDuplicatePhone(request.getPhoneNumber());
-            existingUser.setPhoneNumber(request.getPhoneNumber());
+    private void updatePhone(User user, String phone) {
+        if (phone != null && !phone.isBlank()) {
+            if (!user.getPhoneNumber().equals(phone)) {
+                validateDuplicatePhone(phone);
+                user.setPhoneNumber(phone);
+
+                log.debug(phone + " updated for {id}", user.getId());
+            }
         }
     }
 
-    private void updatePassword(User existingUser, UserDTORequest request) {
-        boolean existingPassword = passwordEncoder.matches(request.getPassword(), existingUser.getPassword());
+    private void updatePassword(User user, String password) {
+        if (password != null && !password.isBlank()) {
+            boolean existingPassword = passwordEncoder.matches(password, user.getPassword());
 
-        if (!existingPassword) {
-            encodeAndSetPassword(existingUser, request.getPassword());
+            if (!existingPassword) {
+                encodeAndSetPassword(user, password);
+            }
         }
     }
 
-    private void updateEmail(User existingUser, UserDTORequest request) {
-        if (!existingUser.getEmail().equals(request.getEmail())) {
-            validateDuplicateEmail(request.getEmail());
-            existingUser.setEmail(request.getEmail());
+    private void updateEmail(User user, String email) {
+        if (email != null && !email.isBlank()) {
+            if (!user.getEmail().equals(email)) {
+                validateDuplicateEmail(email);
+                user.setEmail(email);
+
+                log.debug(email + " updated for {id}", user.getId());
+
+            }
+        }
+    }
+
+    private void updateFirstName(User user, String firstName) {
+        if (firstName != null && !firstName.isBlank()) {
+            user.setFirstName(firstName);
+
+            log.debug(firstName + " updated for {id}", user.getId());
+        }
+    }
+
+    private void updateLastName(User user, String lastName) {
+        if (lastName != null && !lastName.isBlank()) {
+            user.setLastName(lastName);
+
+            log.debug(lastName + " updated for {id}", user.getId());
         }
     }
 
@@ -136,12 +169,32 @@ public class UserService {
     public UserDTOResponse updateUser(Long id, UserDTORequest request) {
         User existingUser = findUserById(id);
 
-        existingUser.setFirstName(request.getFirstName());
-        existingUser.setLastName(request.getLastName());
-        updatePassword(existingUser, request);
-        updateEmail(existingUser, request);
-        updatePhone(existingUser, request);
+        updateFirstName(existingUser, request.getFirstName());
+        updateLastName(existingUser, request.getLastName());
+        updatePassword(existingUser, request.getPassword());
+        updateEmail(existingUser, request.getEmail());
+        updatePhone(existingUser, request.getPhoneNumber());
 
+        log.info("Updated user {id}", existingUser.getId());
+        return userMapper.toDTO(userRepository.save(existingUser));
+    }
+
+    @Transactional
+    public UserDTOResponse partialUpdateUser(Long id, UserDTOPatchRequest request) {
+        if (request.getFirstName() == null && request.getLastName() == null && request.getEmail() == null &&
+                request.getPhoneNumber() == null && request.getPassword() == null) {
+            throw new IllegalArgumentException("At least one field must be provided for update");
+        }
+
+        User existingUser = findUserById(id);
+
+        updateFirstName(existingUser, request.getFirstName());
+        updateLastName(existingUser, request.getLastName());
+        updatePassword(existingUser, request.getPassword());
+        updateEmail(existingUser, request.getEmail());
+        updatePhone(existingUser, request.getPhoneNumber());
+
+        log.info("Partial updated user {id}", existingUser.getId());
         return userMapper.toDTO(userRepository.save(existingUser));
     }
 }

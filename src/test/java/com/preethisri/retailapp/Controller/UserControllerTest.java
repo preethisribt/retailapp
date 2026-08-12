@@ -1,5 +1,6 @@
 package com.preethisri.retailapp.Controller;
 
+import com.preethisri.retailapp.DTO.Request.User.UserDTOPatchRequest;
 import com.preethisri.retailapp.DTO.Request.User.UserDTORequest;
 import com.preethisri.retailapp.DTO.Response.User.UserDTOResponse;
 import com.preethisri.retailapp.Enums.UserRole;
@@ -20,8 +21,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -298,7 +298,7 @@ public class UserControllerTest {
                         .content(objectMapper.writeValueAsString(userDTORequest)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message")
-                        .value("Invalid format"));
+                        .value("Invalid email format"));
 
         Mockito.verifyNoInteractions(userService);
     }
@@ -396,14 +396,14 @@ public class UserControllerTest {
     void shouldReturnBadRequest_PhoneNumberTypeIsInvalid_UpdateUser() throws Exception {
 
         String requestBody = """
-            {
-              "email": "james@gmail.com",
-              "firstName": "James",
-              "lastName": "Anderson",
-              "phoneNumber": 0412345678,
-              "password": "Password@123"
-            }
-            """;
+                {
+                  "email": "james@gmail.com",
+                  "firstName": "James",
+                  "lastName": "Anderson",
+                  "phoneNumber": 0412345678,
+                  "password": "Password@123"
+                }
+                """;
 
         mockMvc.perform(put("/api/users/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -426,5 +426,165 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.message").value("User not found with id: 111"));
 
         Mockito.verify(userService, times(1)).updateUser(Mockito.any(Long.class), Mockito.any(UserDTORequest.class));
+    }
+
+    @Test
+    void shouldAbleToPartiallyUpdateTheResource() throws Exception {
+        Long id = 1L;
+
+        UserDTOPatchRequest request = new UserDTOPatchRequest();
+        request.setEmail("michael.brown@gmail.com");
+        request.setFirstName("Michael");
+        request.setLastName("Brown");
+        request.setPhoneNumber("0434567890");
+        request.setPassword("michael6844");
+
+        Mockito.when(userService.partialUpdateUser(Mockito.any(Long.class), Mockito.any(UserDTOPatchRequest.class))).thenReturn(userDTOResponse);
+
+        mockMvc.perform(patch("/api/users/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstName").value("Michael"))
+                .andExpect(jsonPath("$.lastName").value("Brown"))
+                .andExpect(jsonPath("$.phoneNumber").value("0434567890"))
+                .andExpect(jsonPath("$.email").value("michael.brown@gmail.com"))
+                .andExpect(jsonPath("$.id").value(id));
+
+        Mockito.verify(userService, times(1)).partialUpdateUser(Mockito.any(Long.class), Mockito.any(UserDTOPatchRequest.class));
+    }
+
+    @Test
+    void shouldPartiallyUpdateTheResourceWithFirstNames() throws Exception {
+        Long id = 1L;
+        String firstName = "Larry";
+        String lastName = "Brown";
+        UserDTOPatchRequest request = new UserDTOPatchRequest();
+        request.setFirstName(firstName);
+
+        userDTOResponse.setFirstName(firstName);
+
+        Mockito.when(userService.partialUpdateUser(Mockito.any(Long.class), Mockito.any(UserDTOPatchRequest.class))).thenReturn(userDTOResponse);
+
+        mockMvc.perform(patch("/api/users/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstName").value(firstName))
+                .andExpect(jsonPath("$.lastName").value(lastName))
+                .andExpect(jsonPath("$.id").value(id));
+
+        Mockito.verify(userService, times(1)).partialUpdateUser(Mockito.any(Long.class), Mockito.any(UserDTOPatchRequest.class));
+    }
+
+
+    @Test
+    void shouldReturnBadRequest_invalidName_PartiallyUpdate() throws Exception {
+        Long id = 1L;
+        UserDTOPatchRequest request = new UserDTOPatchRequest();
+        request.setFirstName("Michel O' ");
+
+        mockMvc.perform(patch("/api/users/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid Firstname"));
+
+        Mockito.verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldReturnBadRequest_invalidPhone_PartiallyUpdate() throws Exception {
+        Long id = 1L;
+        UserDTOPatchRequest request = new UserDTOPatchRequest();
+        request.setPhoneNumber("041234555454678");
+
+        mockMvc.perform(patch("/api/users/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Phone number must contain 10 to 13 digits and may start with +"));
+
+        Mockito.verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldReturnBadRequest_invalidEmail_PartiallyUpdate() throws Exception {
+        Long id = 1L;
+        UserDTOPatchRequest request = new UserDTOPatchRequest();
+        request.setEmail("michael.browngmail.com");
+
+        mockMvc.perform(patch("/api/users/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid email format"));
+
+        Mockito.verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldReturnResourceNotFound_UnavailableId_PartiallyUpdate() throws Exception {
+        Long id = 1111L;
+        UserDTOPatchRequest request = new UserDTOPatchRequest();
+        request.setFirstName("Brown");
+
+        Mockito.when(userService.partialUpdateUser(Mockito.any(Long.class), Mockito.any(UserDTOPatchRequest.class))).thenThrow(new ResourceNotFoundException("User not found with id:" + id));
+
+        mockMvc.perform(patch("/api/users/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("User not found with id:" + id));
+
+        Mockito.verify(userService, times(1)).partialUpdateUser(Mockito.any(Long.class), Mockito.any(UserDTOPatchRequest.class));
+    }
+
+    @Test
+    void shouldReturnBadRequest_invalidId_PartiallyUpdate() throws Exception {
+        Long id = -1L;
+        UserDTOPatchRequest request = new UserDTOPatchRequest();
+        request.setFirstName("Brown");
+
+        Mockito.when(userService.partialUpdateUser(Mockito.any(Long.class), Mockito.any(UserDTOPatchRequest.class))).thenThrow(new ResourceNotFoundException("User not found with id:" + id));
+
+        mockMvc.perform(patch("/api/users/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("id must be greater than or equal to 1"));
+
+        Mockito.verifyNoInteractions(userService);
+    }
+    @Test
+    void shouldReturnBadRequest_emptyJson_PartiallyUpdate() throws Exception {
+        Long id = 1L;
+        UserDTOPatchRequest request = new UserDTOPatchRequest();
+
+        Mockito.when(userService.partialUpdateUser(Mockito.any(Long.class), Mockito.any(UserDTOPatchRequest.class))).thenThrow(new IllegalArgumentException("At least one field must be provided for update"));
+
+        mockMvc.perform(patch("/api/users/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("At least one field must be provided for update"));
+
+        Mockito.verify(userService, times(1)).partialUpdateUser(Mockito.any(Long.class), Mockito.any(UserDTOPatchRequest.class));
+    }
+
+    @Test
+    void shouldReturnBadRequest_invalidPassword_PartiallyUpdate() throws Exception {
+        Long id = 1L;
+
+        UserDTOPatchRequest request = new UserDTOPatchRequest();
+        request.setPassword("123");
+
+        mockMvc.perform(patch("/api/users/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Password must contain 8 to 13 characters"));
+
+        Mockito.verifyNoInteractions(userService);
     }
 }
