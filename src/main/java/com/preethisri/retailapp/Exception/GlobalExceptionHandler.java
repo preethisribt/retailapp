@@ -58,7 +58,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException exp) {
         String message = exp.getMessage();
 
-        ErrorResponse error = new ErrorResponse(400, message);
+        ErrorResponse error = new ErrorResponse(400, "Data already exists");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
@@ -94,5 +94,17 @@ public class GlobalExceptionHandler {
 
         ErrorResponse error = new ErrorResponse(400, message);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientStockException(InsufficientStockException exp) {
+        ErrorResponse error = new ErrorResponse(400, exp.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    @ExceptionHandler(ProductAlreadyInCartException.class)
+    public ResponseEntity<ErrorResponse> handleProductAlreadyInCartException(ProductAlreadyInCartException exp) {
+        ErrorResponse error = new ErrorResponse(400, exp.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 }
