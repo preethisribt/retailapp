@@ -98,13 +98,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InsufficientStockException.class)
     public ResponseEntity<ErrorResponse> handleInsufficientStockException(InsufficientStockException exp) {
-        ErrorResponse error = new ErrorResponse(400, exp.getMessage());
+        ErrorResponse error = new ErrorResponse(409, exp.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
     @ExceptionHandler(ProductAlreadyInCartException.class)
     public ResponseEntity<ErrorResponse> handleProductAlreadyInCartException(ProductAlreadyInCartException exp) {
-        ErrorResponse error = new ErrorResponse(400, exp.getMessage());
+        ErrorResponse error = new ErrorResponse(409, exp.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 }

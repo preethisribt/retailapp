@@ -16,6 +16,7 @@ public class CartItemDTORequest {
             example = "1"
     )
     @NotNull(message = "Product ID can't be empty")
+    @Positive(message = "Product ID must be greater than 0")
     private Long productId;
 
     @Schema(
